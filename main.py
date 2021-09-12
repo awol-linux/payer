@@ -48,7 +48,7 @@ def calculate():
                 )
                 break
             except ValidationError:
-                pass
+                print("Please add valid Time")
     return days
 
 
