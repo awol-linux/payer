@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, date, time
 from pydantic import BaseModel
 from pydantic.class_validators import validator
-from pydantic.fields import T
+from pydantic.error_wrappers import ValidationError
+from textwrap import dedent
 
 
 class Workhours(BaseModel):
@@ -22,8 +23,7 @@ class Workhours(BaseModel):
     @property
     def pay(self):
         return self.wage * self.hours_worked
-
-
+    
 def calculate():
     days = []
     for count, day in enumerate(["mon", "tue", "wed", "thur", "fri"]):
@@ -35,11 +35,16 @@ def calculate():
                 break
             attempt = last_week - timedelta(days=1)
         date_obj = last_week + timedelta(days=count)
-        while true:
+        while True:
+            did_work = input(f"Did you work on {day}: ").lower()
+            if did_work in ('n', 'no'):
+                break
+            if not did_work in ('y', 'yes'):
+                continue
             start, end = input(f"{day} start: "), input(f"{day} end: ")
             try:
                 if start != "" and end != "":
-                days.append(
+                    days.append(
                     Workhours(
                         startime=f"{date_obj}T{start}",
                         endtime=f"{date_obj}T{end}",
@@ -54,7 +59,12 @@ def calculate():
 
 def output_pretty(days):
     for x in days:
-        print(f"On {x.day} you worked {x.hours_worked} and made {x.pay} Dollars")
+        print(dedent(f"""
+        On {x.day} 
+        you started at {x.startime.strftime("%I:%M %p")}
+        Worked until {x.endtime.strftime("%I:%M %p")}
+        which totaled {x.hours_worked}
+        And made {x.pay} Dollars"""))
 
 
 def main():
