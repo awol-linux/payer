@@ -35,15 +35,20 @@ def calculate():
                 break
             attempt = last_week - timedelta(days=1)
         date_obj = last_week + timedelta(days=count)
-        start, end = input(f"{day} start: "), input(f"{day} end: ")
-        if start != "" and end != "":
-            days.append(
-                Workhours(
-                    startime=f"{date_obj}T{start}",
-                    endtime=f"{date_obj}T{end}",
-                    day=day.capitalize(),
+        while true:
+            start, end = input(f"{day} start: "), input(f"{day} end: ")
+            try:
+                if start != "" and end != "":
+                days.append(
+                    Workhours(
+                        startime=f"{date_obj}T{start}",
+                        endtime=f"{date_obj}T{end}",
+                        day=day.capitalize(),
+                    )
                 )
-            )
+                break
+            except ValidationError:
+                pass
     return days
 
 
