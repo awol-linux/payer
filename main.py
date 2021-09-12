@@ -6,10 +6,11 @@ from textwrap import dedent
 
 
 class Workhours(BaseModel):
-    wage: int = 10
+    wage: int = 14
     startime: datetime
     endtime: datetime
     day: str
+    overtime_limit: int = 8
 
     @validator("endtime", pre=False)
     def parse_endtime(cls, arg):
@@ -21,9 +22,22 @@ class Workhours(BaseModel):
         return delta.seconds // 3600
 
     @property
+    def seconds_worked(self):
+        delta = self.endtime - self.startime
+        return delta.seconds
+
+    @property
     def pay(self):
-        return self.wage * self.hours_worked
-    
+        second_wage = float(self.wage) / float(3600)
+        if self.seconds_worked > (self.overtime_limit * 3600):
+            normal_pay = self.overtime_limit * self.wage
+            overtime = (self.seconds_worked - (self.overtime_limit * 3600)) * (
+                second_wage * 1.5
+            )
+            return round(normal_pay + overtime, 2)
+        return round((second_wage * self.seconds_worked), 2)
+
+
 def calculate():
     days = []
     for count, day in enumerate(["mon", "tue", "wed", "thur", "fri"]):
@@ -37,20 +51,20 @@ def calculate():
         date_obj = last_week + timedelta(days=count)
         while True:
             did_work = input(f"Did you work on {day}: ").lower()
-            if did_work in ('n', 'no'):
+            if did_work in ("n", "no"):
                 break
-            if not did_work in ('y', 'yes'):
+            if not did_work in ("y", "yes"):
                 continue
             start, end = input(f"{day} start: "), input(f"{day} end: ")
             try:
                 if start != "" and end != "":
                     days.append(
-                    Workhours(
-                        startime=f"{date_obj}T{start}",
-                        endtime=f"{date_obj}T{end}",
-                        day=day.capitalize(),
+                        Workhours(
+                            startime=f"{date_obj}T{start}",
+                            endtime=f"{date_obj}T{end}",
+                            day=day.capitalize(),
+                        )
                     )
-                )
                 break
             except ValidationError:
                 print("Please add valid Time")
@@ -59,12 +73,16 @@ def calculate():
 
 def output_pretty(days):
     for x in days:
-        print(dedent(f"""
+        print(
+            dedent(
+                f"""
         On {x.day} 
         you started at {x.startime.strftime("%I:%M %p")}
         Worked until {x.endtime.strftime("%I:%M %p")}
-        which totaled {x.hours_worked}
-        And made {x.pay} Dollars"""))
+        Which totaled {x.hours_worked} hours and {int((x.seconds_worked % 3600) / 60)} minutes
+        And made {x.pay} Dollars"""
+            )
+        )
 
 
 def main():
